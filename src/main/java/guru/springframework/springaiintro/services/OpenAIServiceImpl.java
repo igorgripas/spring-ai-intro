@@ -2,6 +2,7 @@ package guru.springframework.springaiintro.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import guru.springframework.springaiintro.model.Answer;
+import guru.springframework.springaiintro.model.GetCapitalInfoResponse;
 import guru.springframework.springaiintro.model.GetCapitalRequest;
 import guru.springframework.springaiintro.model.GetCapitalResponse;
 import guru.springframework.springaiintro.model.Question;
@@ -39,26 +40,31 @@ public class OpenAIServiceImpl implements OpenAIService {
     ObjectMapper objectMapper;
 
     @Override
-    public Answer getCapitalWithInfo(GetCapitalRequest getCapitalRequest) {
-        PromptTemplate promptTemplate = new PromptTemplate(getCapitalPromptWithInfo);
-        Prompt prompt = promptTemplate.create(Map.of("stateOrCountry", getCapitalRequest.stateOrCountry()));
+    public GetCapitalInfoResponse getCapitalWithInfo(GetCapitalRequest getCapitalRequest) {
+        BeanOutputConverter<GetCapitalInfoResponse> converter = new BeanOutputConverter<>(GetCapitalInfoResponse.class);
+        String format = converter.getFormat();
+
+        PromptTemplate promptTemplate = new PromptTemplate(getCapitalPrompt);
+        Prompt prompt = promptTemplate.create(Map.of("stateOrCountry", getCapitalRequest.stateOrCountry(),"format", format));
         ChatResponse response = chatModel.call(prompt);
 
-        return new Answer(response.getResult().getOutput().getContent());
+        String content = response.getResult().getOutput().getContent();
+        return converter.convert(content);
     }
 
     @Override
     public GetCapitalResponse getCapital(GetCapitalRequest getCapitalRequest) {
         BeanOutputConverter<GetCapitalResponse> converter = new BeanOutputConverter<>(GetCapitalResponse.class);
         String format = converter.getFormat();
-
         PromptTemplate promptTemplate = new PromptTemplate(getCapitalPrompt);
         Prompt prompt = promptTemplate.create(Map.of("stateOrCountry", getCapitalRequest.stateOrCountry(),
                 "format", format));
 
         ChatResponse response = chatModel.call(prompt);
 
-        return converter.convert(response.getResult().getOutput().getContent());
+        String content = response.getResult().getOutput().getContent();
+        return converter.convert(content);
+
     }
 
     @Override
